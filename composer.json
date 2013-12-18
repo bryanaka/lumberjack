@@ -1,0 +1,50 @@
+{
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://wpackagist.org"
+    },
+    {
+      "type": "package",
+      "package": {
+        "name": "wordpress",
+        "version": "3.8",
+        "type": "webroot",
+        "dist": {
+          "type": "zip",
+          "url": "https://github.com/WordPress/WordPress/archive/3.8.zip"
+        },
+        "require" : {
+          "fancyguy/webroot-installer": "1.1.0"
+        }
+      }
+    }
+  ],
+
+  "require": {
+    "php": ">=5.3.0",
+    "wordpress": "3.8",
+
+    "fancyguy/webroot-installer": "1.*",
+    "composer/installers": "1.0.*",
+
+    "wp-cli/wp-cli": "0.*",
+    "psy/psysh": "0.1.0.*@dev",
+    "vlucas/phpdotenv": "1.*",
+
+    "wpackagist/jetpack": "~2.7",
+    "wpackagist/manual-control": "~0.2",
+    "wpackagist/wordpress-importer": "~0.6.1",
+    "wpackagist/timber-library": "~0.16.2"
+
+  },
+
+  "extra": {
+    "installer-paths": {
+      "app/plugins/{$name}/": ["type:wordpress-plugin"],
+      "app/mu-plugins/{$name}/": ["type:wordpress-muplugin"]
+    },
+    "webroot-dir": "wp",
+    "webroot-package": "wordpress"
+  }
+}
