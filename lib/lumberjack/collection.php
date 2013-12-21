@@ -1,41 +1,100 @@
 <?php
 namespace Lumberjack;
 
-class Collection extends ArrayObject {
+/*
+*
+* @class Lumberjack\Collection
+*
+* I don't know if it is more efficent to use array_map with a copy, then create a new
+* instance, or if using the iterator would be better...
+*
+*/
+class Collection extends \ArrayObject {
 
-	public function comparator() {
+	protected $comparator;
+	protected $autosort = false;
 
+	public function setComparator($func) {
+		return $this->comparator = $func;
 	}
 
-	public function length() {
-		
+	public function setAutosort($bool) {
+		return $this->autosort = $bool;
 	}
 
-	public function push($val) {
-		$this->append($val);
+	public function getLength() {
+		return $this->count();
 	}
 
-	public function pop() {
-
+	public function getSize() {
+		return $this->count();
 	}
 
-	public function shift() {
+	public function push() {
+		$newArray = array_merge($this->getArrayCopy(), func_get_args());
+		$this->exchangeArray($newArray);
+		return $this;
+	}
 
+	public function pop($amount = 1) {
+		$results = array();
+		$index = $this->count() - 1;
+		while($amount > 0) {
+			array_unshift($results, $this->offsetPull($index));
+			--$amount;
+			--$index;
+		}
+		return (count($results) > 1 ? $results : $results[0]);
+	}
+
+	public function shift($amount = 1) {
+		$results = array();
+		for($i = 0; $amount > $i; $i++) {
+			$results[] = $this->offsetPull($i);
+		}
+		return (count($results) > 1 ? $results : $results[0]);
 	}
 
 	public function unshift() {
-
+		$newArray = array_merge(func_get_args(), $this->getArrayCopy());
+		$this->exchangeArray($newArray);
+		return $this;
 	}
 
-	public function pluck() {
-
+	public function map($func) {
+		return new self( $this->_map($func) );
 	}
 
-	public function map() {
+	public function mMap($func) {
+		$newArray = $this->_map($func);
+		$this->exchangeArray($newArray);
+		return $this;
+	}
 
+	public function pluck($attribute) {
+		return $this->_map( function($val) use (&$attribute) {
+			return $val->{$attribute};
+		});
 	}
 
 	public function reduce() {
 
 	}
+
+	public function __get($name) {
+    	if (method_exists($this, ($method = 'get'.ucwords($name) ))) {
+      		return $this->$method();
+    	}
+    	else return;
+  	}
+
+  	protected function offsetPull($index) {
+  		$val = $this->offsetGet($index);
+		$this->offsetUnset($index);
+		return $val;
+  	}
+
+  	protected function _map($func) {
+  		return array_map( $func, $this->getArrayCopy() );
+  	}
 }

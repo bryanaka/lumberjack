@@ -1,12 +1,14 @@
 <?php
-
-require_once("store.php");
-require_once("model.php");
-require_once("collection.php");
+function require_relative($path) {
+	require_once(dirname(__FILE__)."/".$path);
+}
+require_relative("lumberjack/store.php");
+require_relative("lumberjack/model.php");
+require_relative("lumberjack/collection.php");
 
 // Models
-require_once("models/user.php");
-require_once("models/post.php");
-require_once("models/page.php");
-require_once("models/menu.php");
-require_once("models/term.php");
+// require_relative("models/user.php");
+// require_relative("models/post.php");
+// require_relative("models/page.php");
+// require_relative("models/menu.php");
+// require_relative("models/term.php");
