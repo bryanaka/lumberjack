@@ -20,12 +20,23 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
 
 	protected function setUp() {
 		$this->collection = new Collection;
-		$this->greetings  = new Collection(array("hey", "man", "what", "up"));
-		$this->people = new Collection( array(
-											new Person("Walter", "I am the danger."),
-											new Person("Jesse",  "Yeah, Science!"),
-											new Person("Skylar", "Walter?")
-										));
+
+		$this->walt   = new Person("Walter", "I am the danger.");
+		$this->jesse  = new Person("Jesse",  "Yeah, Science!");
+		$this->skylar = new Person("Skylar", "Walter?");
+		$this->junior = new Person("Junior", "Hey Guys!");
+		$this->people = new Collection( array($this->walt, $this->jesse, $this->skylar));
+	}
+
+	protected function getComparatorCollection() {
+		$this->people->setComparator(function($a, $b) {
+			if ($a->greeting == $b->greeting) {
+    		    return 0;
+    		}
+    		return ($a->greeting < $b->greeting) ? -1 : 1;
+		});
+		$this->people->setAutosort = true;
+		return $this->people;
 	}
 
 	/**
@@ -33,7 +44,7 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      */
 	public function testLength() {
 		$this->assertEquals($this->collection->length, 0);
-		$this->collection->append("hey");
+		$this->collection->append($this->junior);
 		$this->assertEquals($this->collection->length, 1);
 	}
 
@@ -41,7 +52,15 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
 	 * @covers ::setComparator
 	 */
 	public function testSetComparator() {
-		$this->markTestSkipped();
+		$testFunc = $this->collection->setComparator(function() {
+			if ($a == $b) { return 0; }
+		    return ($a < $b) ? -1 : 1;
+		});
+		$this->assertEquals(function() {
+			if ($a == $b) { return 0; }
+		    return ($a < $b) ? -1 : 1;
+		}, $testFunc);
+
 	}
 
 	/**
@@ -57,6 +76,9 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
 	 */
 	public function testAdd() {
 		$this->markTestSkipped();
+		$people = $this->getComparatorCollection();
+		$people->add(new Person("Combo", "Dude, I got shot!"));
+		$this->assertEquals("Dude, I got shot!", $people[0]->greeting);
 	}
 
 	/**
@@ -70,8 +92,8 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @covers ::push
      */
 	public function testPush() {
-		$this->collection->push("hey");
-		$this->assertEquals($this->collection[0], "hey");
+		$this->collection->push($this->junior);
+		$this->assertEquals($this->collection[0], $this->junior);
 	}
 
 	/**
@@ -79,9 +101,9 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @depends testPush
      */
 	public function testPushMultiple() {
-		$this->collection->push("hey", "man", "what", "is", "up");
-		$this->assertEquals($this->collection[2], "what");
-		$this->assertEquals($this->collection[3], "is");
+		$this->collection->push($this->junior, $this->walt, $this->jesse, $this->skylar);
+		$this->assertEquals($this->collection[2], $this->jesse);
+		$this->assertEquals($this->collection[3], $this->skylar);
 	}
 
 	/**
@@ -89,7 +111,7 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @depends testPush
      */
 	public function testPushReturnsSelf() {
-		$collection = $this->collection->push("hey", "man");
+		$collection = $this->collection->push($this->junior, $this->walt);
 		$this->assertEquals($this->collection, $collection);
 	}
 
@@ -97,8 +119,8 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @covers ::pop
      */
 	public function testPop() {
-		$val = $this->greetings->pop();
-		$this->assertEquals("up", $val);
+		$val = $this->people->pop();
+		$this->assertEquals($this->skylar, $val);
 	}
 
 	/**
@@ -106,16 +128,16 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @depends testPop
      */
 	public function testPopMultiple() {
-		$val = $this->greetings->pop(2);
-		$this->assertEquals(array("what", "up"), $val);
+		$val = $this->people->pop(2);
+		$this->assertEquals(array($this->jesse, $this->skylar), $val);
 	}
 
 	/**
      * @covers ::shift
      */
 	public function testShift() {
-		$val = $this->greetings->shift();
-		$this->assertEquals("hey", $val);
+		$val = $this->people->shift();
+		$this->assertEquals($this->walt, $val);
 	}
 
 	/**
@@ -123,16 +145,16 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @depends testShift
      */
 	public function testShiftMultiple() {
-		$val = $this->greetings->shift(2);
-		$this->assertEquals(array("hey", "man"), $val);
+		$val = $this->people->shift(2);
+		$this->assertEquals(array($this->walt, $this->jesse), $val);
 	}
 
 	/**
      * @covers ::unshift
      */
 	public function testUnshift() {
-		$this->greetings->unshift("yo yo yo");
-		$this->assertEquals("yo yo yo", $this->greetings[0]);
+		$this->people->unshift($this->junior);
+		$this->assertEquals($this->junior, $this->people[0]);
 	}
 
 	/**
@@ -140,9 +162,9 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @depends testUnshift
      */
 	public function testUnshiftMultiple() {
-		$this->collection->unshift("hey", "man", "what", "is", "up");
-		$this->assertEquals($this->collection[2], "what");
-		$this->assertEquals($this->collection[3], "is");
+		$this->collection->unshift($this->junior, $this->walt, $this->jesse, $this->skylar);
+		$this->assertEquals($this->jesse, $this->collection[2]);
+		$this->assertEquals($this->skylar, $this->collection[3]);
 	}
 
 	/**
@@ -150,37 +172,50 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
      * @depends testUnshift
      */
 	public function testUnshiftReturnsSelf() {
-		$greetings = $this->greetings->unshift("yo yo yo");
-		$this->assertEquals($this->greetings, $greetings);
+		$people = $this->people->unshift($this->junior);
+		$this->assertEquals($this->people, $people);
 	}
 
 	/**
      * @covers ::map
     */
 	public function testMap() {
-		$mapped = $this->greetings->map(function($val) {
-			return $val." bro";
+		$mapped = $this->people->map(function($val) {
+			return "Hey ".$val->name;
 		});
-		$this->assertEquals("hey bro", $mapped[0]);
-		$this->assertEquals("man bro", $mapped[1]);
+		$this->assertEquals("Hey Walter", $mapped[0]);
+		$this->assertEquals("Hey Jesse",  $mapped[1]);
 	}
 
 	/**
      * @covers ::mMap
     */
 	public function testMMap() {
-		$this->greetings->mMap(function($val) {
-			return $val." bro";
+		$this->people->mMap(function($val) {
+			return new Person("Mr. ".$val->name, "Yo");
 		});
-		$this->assertEquals("hey bro", $this->greetings[0]);
-		$this->assertEquals("man bro", $this->greetings[1]);
+		$this->assertEquals("Mr. Walter", $this->people[0]->name);
+		$this->assertEquals("Mr. Jesse",  $this->people[1]->name);
 	}
 
 	/**
 	 * @covers ::reduce
 	 */
 	public function testReduce() {
-		$this->markTestSkipped();
+		$data = $this->people->reduce(function(&$result, $item){
+			return $result .= " ".$item->name;
+		}, "Whoa!");
+		$this->assertEquals("Whoa! Walter Jesse Skylar",$data);
+	}
+
+	/**
+	 * @covers ::reduce
+	 */
+	public function testReduceWithoutInitialParam() {
+		$data = $this->people->reduce(function($result, $item){
+			return $result .= " ".$item->name;
+		});
+		$this->assertEquals(" Walter Jesse Skylar",$data);
 	}
 
 	/**
@@ -271,6 +306,27 @@ class CollectionTest extends PHPUnit_Framework_TestCase {
 	 * @covers ::sample
 	 */
 	public function testSample() {
+		$this->markTestSkipped();
+	}
+
+	/**
+	 * @covers ::onAdd
+	 */
+	public function testOnAdd () {
+		$this->markTestSkipped();
+	}
+
+	/**
+	 * @covers ::onRemove
+	 */
+	public function testOnRemove () {
+		$this->markTestSkipped();
+	}
+
+	/**
+	 * @covers ::stop
+	 */
+	public function testStopObserving () {
 		$this->markTestSkipped();
 	}
 

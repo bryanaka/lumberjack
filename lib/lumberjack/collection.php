@@ -9,17 +9,20 @@ namespace Lumberjack;
 * instance, or if using the iterator would be better...
 *
 */
-class Collection extends \ArrayObject {
+class Collection extends \ArrayObject implements \SplSubject {
 
-	protected $comparator;
+	protected $comparator = null;
 	protected $autosort = false;
+	private   $observers = array("add" => array(), "remove" => array());
 
 	public function setComparator($func) {
 		return $this->comparator = $func;
 	}
 
 	public function setAutosort($bool) {
-		return $this->autosort = $bool;
+		$this->autosort = $bool;
+		$this->_sort();
+		return $this->autosort;
 	}
 
 	public function getLength() {
@@ -33,7 +36,12 @@ class Collection extends \ArrayObject {
 	public function push() {
 		$newArray = array_merge($this->getArrayCopy(), func_get_args());
 		$this->exchangeArray($newArray);
+		$this->_sort();
 		return $this;
+	}
+
+	public function add($obj){
+		return $this->push($obj);
 	}
 
 	public function pop($amount = 1) {
@@ -44,6 +52,7 @@ class Collection extends \ArrayObject {
 			--$amount;
 			--$index;
 		}
+		$this->_sort();
 		return (count($results) > 1 ? $results : $results[0]);
 	}
 
@@ -52,12 +61,14 @@ class Collection extends \ArrayObject {
 		for($i = 0; $amount > $i; $i++) {
 			$results[] = $this->offsetPull($i);
 		}
+		$this->_sort();
 		return (count($results) > 1 ? $results : $results[0]);
 	}
 
 	public function unshift() {
 		$newArray = array_merge(func_get_args(), $this->getArrayCopy());
 		$this->exchangeArray($newArray);
+		$this->_sort();
 		return $this;
 	}
 
@@ -77,15 +88,27 @@ class Collection extends \ArrayObject {
 		});
 	}
 
-	public function reduce() {
-
+	public function reduce($func, $initial = null) {
+		return array_reduce($this->getArrayCopy(), $func, $initial);
 	}
 
 	public function __get($name) {
-    	if (method_exists($this, ($method = 'get'.ucwords($name) ))) {
+    	if (method_exists($this, ($method = "get".ucwords($name) ))) {
       		return $this->$method();
     	}
     	else return;
+  	}
+
+  	public function attach(\SplObserver $observer) {
+
+  	}
+
+  	public function detach(\SplObserver $observer) {
+
+  	}
+
+  	public function notify() {
+
   	}
 
   	protected function offsetPull($index) {
@@ -96,5 +119,11 @@ class Collection extends \ArrayObject {
 
   	protected function _map($func) {
   		return array_map( $func, $this->getArrayCopy() );
+  	}
+
+  	protected function _sort() {
+  		if($this->autosort && $this->comparator) {
+			$this->uasort($this->comparator);
+		}
   	}
 }
