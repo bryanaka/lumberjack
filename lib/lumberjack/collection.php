@@ -72,8 +72,19 @@ class Collection extends \ArrayObject implements \SplSubject {
 		return $this;
 	}
 
+	public function slice($begin, $length = null) {
+		$length = ($length ? $length : $this->length);
+		return new static(array_slice($this->getArrayCopy(), $begin, $length));
+	}
+
+	public function mSlice($begin, $length = null) {
+		$length = ($length ? $length : $this->length);
+		$this->exchangeArray( array_slice($this->getArrayCopy(), $begin, $length) );
+		return $this;
+	}
+
 	public function map($func) {
-		return new self( $this->_map($func) );
+		return new static( $this->_map($func) );
 	}
 
 	public function mMap($func) {
@@ -90,6 +101,37 @@ class Collection extends \ArrayObject implements \SplSubject {
 
 	public function reduce($func, $initial = null) {
 		return array_reduce($this->getArrayCopy(), $func, $initial);
+	}
+
+	public function filter($func) {
+		$result = new static;
+		$this->_map(function($val) use($func, $result) {
+			$func($val) ? $result->push($val) : null;
+		});
+		return $result;
+	}
+
+	public function reject($func) {
+		$result = new static;
+		$this->_map(function($val) use($func, $result) {
+			$func($val) ? null: $result->push($val);
+		});
+		return $result;
+	}
+
+	public function where($attributes, $limit = null) {
+		$result = new static;
+
+		foreach ($this as $obj) {
+			foreach ($attributes as $attr => $val) {
+				$add = ( $obj->{$attr} === $val ? true : false);
+			}
+			$add ? $result->push($obj) : null;
+			if ($limit && $result->length >= $limit) {
+				break;
+			}
+		}
+		return $result;
 	}
 
 	public function __get($name) {
